@@ -10,7 +10,7 @@
 % for the diffusion.
 
 a=0.0475;  % advection coefficient
-b=1;  % diffusion coefficient
+b=1e-2;    % diffusion coefficient
 
 %I=@(y) -(y-0.7808).^2+0.6096;  % example u(x,0) (didn't yield good results
                                 % for the first version of this code
@@ -32,16 +32,16 @@ end
 
 % Setup Centered Difference method for Diffusion
 
-A=sparse(m,m);   % Sparse uses less memory than zeros
-A(1,1)=1;  % Columns 1 and m done manually because they do not
-A(1,2)=0;   %   include both the lower and upper diagonals.
-A(m,m)=h;   % FE approximation of derivative for u'(1)=0 condition
-A(m,m-1)=-h;
-for i=2:m-1; 
-    A(i,i)=2;  % main diagonal is 2
+A=sparse(m+1,m+1);   % Sparse uses less memory than zeros
+for i=2:m;       % Rows 1 and m+1 reserved for BC
+    A(i,i)=2;    % main diagonal is 2
     A(i,i-1)=-1; % upper diagonal is -1
     A(i,i+1)=-1; % lower diagonal is -1
 end
+A=h^(-2)*A;
+
+C=sparse(eye(m+1,m+1)+k*b*A);   % If F(1)=0, Dirichlet BC satisfied
+C(m+1,m)=-1/h; C(m+1,m+1)=1/h;  % Neumann BC at x=1 (we will set F(m+1)=0)
 
 % Advection, then Diffusion
 
@@ -52,18 +52,16 @@ close all
 figure
 plot(x,u1)
 hold on
-for i=1:3
+for i=1:n
 	u0=u1;	% update (i-1)k solution vector
 	u1(2:m)=u0(2:m)-(a*k/h)*(u0(2:m)-u0(1:m-1)); % upwind advection for a>0
 	u1(1)=0; 	% Dirichlet BC at x=0
     u1(m+1)=u1(m);  % Neumann BC at x=1
-    F=zeros(m,1);
-    for i=3:m
-        F(i-1)=(u1(i)-u0(i))/k;   % f(x(i))=u_t(x(i))
+    F=zeros(m+1,1);   
+    for j=2:m
+        F(j)=u0(j);   % f(x(i))=u_t(x(i))
     end
-    F(m)=0; % Neumann BC
-    F=-F;
-    u1(2:m+1)=1e2*(h^2.*(A\F))'; % centered difference for diffusion
+    u1=C\F; % centered difference for diffusion
     plot(x,u1)
     pause(0.01)
 end
