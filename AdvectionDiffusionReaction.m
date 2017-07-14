@@ -9,8 +9,8 @@
 % advection part of this solver, and Two_Point_BVP_Centered_Difference.m
 % for the diffusion.
 
-a=0.0475;  % advection coefficient
-b=1e-2;    % diffusion coefficient
+a=4.75;  % advection coefficient
+b=1e0;    % diffusion coefficient
 
 f=@(x,t) sin(8*pi*x);
 
@@ -62,11 +62,12 @@ for i=1:n
     u1(m+1)=u1(m);  % Neumann BC at x=1
     F=zeros(m+1,1);   
     for j=2:m
-        F(j)=k*f(x(j),t(i))+u0(j);   
+        F(j)=k*f(x(j),t(i))+u1(j);   
     end
     u1=C\F; % centered difference for diffusion
     plot(x,u1); axis([0 1 -1 1]);
-    pause(0.01)
+    %pause(0.01)
 end
 plot(x,u1,x,IC)
 
+un0=u1;
