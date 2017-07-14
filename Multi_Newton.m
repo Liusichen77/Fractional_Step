@@ -1,15 +1,16 @@
-function out=Multi_Newton(k,m,u,tol,N,K1,K2)
+function [out,num]=Multi_Newton(k,m,u,tol,N,K1,K2)
 
-clear uG
+%clear uG
+
+out=NaN;
+num=NaN;
 
 % k := time mesh size
 % m := # of spatial grid points
 % u := concentration after advective step
 % tol := accuracy requirement for exiting Newton loop
 % N := max number of Newton iterations
-% K1/2 := reaction rate constants
-
-out=NaN;
+% K1, K2 := reaction rate constants
 
 % Reaction equations
 
@@ -34,10 +35,27 @@ for i=1:N
     res(1,:)=uG(1,:)-u(1,:)-k.*f1(uG);
     res(2,:)=uG(2,:)-u(2,:)-k.*f2(uG);
     res(3,:)=uG(3,:)-u(3,:)-k.*f3(uG);
+    
+    
+    % Tolerance applied to Actual Error
+    %%{
     if norm(res,inf)<tol
         out=uG;
+        num=i-1;
         return
     end
+    %%}
+    %{
+    % Tolerance applied to Relative Error
+    
+    Relative_res=res./uG;
+    
+    if norm(Relative_res)<tol
+        out=uG;
+        num=i-1;
+        return
+    end
+    %}
 
     Jac11=ones(size(uG(1,:)))-k.*(-K1.*uG(2,:));     % dr1/duG1
     Jac21=-k.*(-K1.*uG(2,:));                        % dr2/duG1
@@ -65,5 +83,5 @@ end
 
 end
 
-
+%}
   
