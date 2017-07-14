@@ -11,7 +11,7 @@
 % advection part of this solver, and Two_Point_BVP_Centered_Difference.m
 % for the diffusion.
 
-a=-9.5;  % advection coefficient
+a=0.00475;  % advection coefficient
 b=1e-2;    % diffusion coefficient
 K1=0.1;  % reaction coefficientn
 K2=0.001;   % reaction coefficient
@@ -80,9 +80,25 @@ figure
 
 f=@(x,t) 0;% sin(8*pi*x);
 
+time=t(1);
+i=0;    % keep track of number of iterations in while loop
+
 for i=1:n
+%while time<tend
+    
+    i=i+1;
+    
+    %_________________________________________________________
+    
+    % Advection and Reaction first
+    
     u=advection(a,k,dBC,nBC,h,m,u,3);  % BC prescribed in "advection.m"
-    u=Multi_Newton(k,m,u,tol,iter,K1,K2);
+    [u,num]=Multi_Newton(k,m,u,tol,iter,K1,K2);
+    
+    %__________________________________________________________
+    
+    % Complete diffusion step
+    
     for j=1:3
     F=zeros(m+1,1);
     F(1)=dBC;  % Dirichlet BC
@@ -92,10 +108,29 @@ for i=1:n
     end
     u(j,:)=C\F;     % centered difference for diffusion
     end
+    
+    %___________________________________________________________
+    
+    % Update time step based on number of iterations it takes for Newton to
+    % converge within given tolerance; advance in time accordingly
+    %%{
+    if num<4
+        k=k*2;
+    else if num>8
+            k=k/2;
+        end
+    end
+    %}
+    time=time+k;
+    K(i)=k;     % Keep track of changes to time step
+
+    %___________________________________________________________
+    
     plot(x,u(1,:),'r',x,u(2,:),'b',x,u(3,:),'k',x,uL(1,:),'r--',x,uL(2,:),'b--',x,uL(3,:),'k--')
     %plot(x,u(1,:),'r',x,u(2,:),'b',x,u(3,:),'k');
-    pause(0.1)
+    pause(0.01)
 end
+K
 
 plot(x,u(1,:),'r',x,u(2,:),'b',x,u(3,:),'k',x,uL(1,:),'r--',x,uL(2,:),'b--',x,uL(3,:),'k--')
 xlabel('Spatial Position')
