@@ -14,10 +14,10 @@ function u=advection(a,k,dBC,nBC,h,m,u0,N)
 for j=1:N;
    if a>0
     u(j,2:m+1)=u0(j,2:m+1)-(a*k/h)*(u0(j,2:m+1)-u0(j,1:m));  % upwind for a>0
-    u(j,1)=dBC; % advection uses 1 BC at the inflow boundary
+    u(j,1)=dBC(j,1); % advection uses 1 BC at the inflow boundary
    else
     u(j,1:m)=u0(j,1:m)-(a*k/h)*(u0(j,2:m+1)-u0(j,1:m));  % upwind for a<0
-    u(j,m+1)=u(j,m)+h*nBC;  % a<0 => inflow boundary at x=1
+    u(j,m+1)=u(j,m)+h*nBC(j,1);  % a<0 => inflow boundary at x=1
    end
 end
  
