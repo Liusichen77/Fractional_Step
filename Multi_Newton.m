@@ -1,10 +1,5 @@
 function [out,num]=Multi_Newton(k,m,u,tol,N,K1,K2)
 
-%clear uG
-
-out=NaN;
-num=NaN;
-
 % k := time mesh size
 % m := # of spatial grid points
 % u := concentration after advective step
@@ -12,17 +7,18 @@ num=NaN;
 % N := max number of Newton iterations
 % K1, K2 := reaction rate constants
 
+out=NaN;
+num=NaN;
+
 % Reaction equations
 
 f1=@(x) -K1.*x(1,:)*(x(2,:)')+K2.*x(3,:);
 f2=@(x) -K1.*x(1,:)*(x(2,:)')+K2.*x(3,:);
 f3=@(x) K1.*x(1,:)*(x(2,:)')-K2.*x(3,:);
 
-% Guesses for u(1,:),u(2,:),u(3,:)
+% Generate initial guess
 
-uG(1,:)=u(1,:)+0.01*ones(size(u(1,:)));
-uG(2,:)=u(2,:)+0.01*ones(size(u(2,:)));
-uG(3,:)=u(3,:)+0.01*ones(size(u(3,:)));
+uG=u+0.01*u;
 
 % Initalize residual
 
@@ -36,26 +32,27 @@ for i=1:N
     res(2,:)=uG(2,:)-u(2,:)-k.*f2(uG);
     res(3,:)=uG(3,:)-u(3,:)-k.*f3(uG);
     
-    
-    % Tolerance applied to Actual Error
-    %%{
+    % Tolerance applied to Absolute Error
+    %{
     if norm(res,inf)<tol
         out=uG;
-        num=i-1;
-        return
-    end
-    %%}
-    %{
-    % Tolerance applied to Relative Error
-    
-    Relative_res=res./uG;
-    
-    if norm(Relative_res)<tol
-        out=uG;
-        num=i-1;
+        num=i;
         return
     end
     %}
+    %%{
+    % Tolerance applied to Relative Error
+    
+    if i==1 
+        res0=norm(res,inf);     % Set scaling factor for relative tolerance
+    end
+    
+    if i>1 && norm(res,inf)/res0<tol
+        out=uG;
+        num=i;
+        return
+    end
+    %%}
 
     Jac11=ones(size(uG(1,:)))-k.*(-K1.*uG(2,:));     % dr1/duG1
     Jac21=-k.*(-K1.*uG(2,:));                        % dr2/duG1
