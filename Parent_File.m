@@ -15,8 +15,8 @@ a=0.0475;  % advection coefficient
 b=0.001;    % diffusion coefficient
 K1=0.01;  % reaction coefficientn
 K2=0;   % reaction coefficient
-dBC=0;  % Dirichlet BC at x=0
-nBC=0;  % Nuemann BC at x=1 (or xend, if different than 1)
+dBC=[0;1;0];  % Dirichlet BC at x=0
+nBC=[0;0;0];  % Nuemann BC at x=1 (or xend, if different than 1)
 
 tol=1e-8; % tolerance for exiting Multi_Newton loop
 iter=20; % number of iterations for Multi_Newton
@@ -26,8 +26,8 @@ xend=1;    % final x value
 h=xend/m;   % step size
 x=(0:h:xend);   % x grid
 
-n=1000;
-tend=5;
+n=100;
+tend=20;
 k=tend/n;
 t=(0:k:tend);
 
@@ -55,24 +55,25 @@ C(m+1,m)=-1/h; C(m+1,m+1)=1/h;  % Neumann BC at x=1 (we will set F(m+1)=0)
 
 % Initial Profiles 
 
-u1=zeros(1,length(x));
+u1=ones(1,length(x));
 u1(round(0.5*(length(x)/xend)+1):round(0.7*(length(x)/xend)))=1;
 
 u2=zeros(1,length(x));
-u2(round(0.3*(length(x)/xend)+1):round(0.5*(length(x)/xend)))=1;
+u2(round(0.3*(length(x)/xend)+1):round(0.5*(length(x)/xend)))=0;
 
 u3=zeros(1,length(x));
 u3(round(0.1*(length(x)/xend)+1):round(0.5*(length(x)/xend)))=0;
 
 u=[u1; u2; u3];
 uL=u;
+
 %{
 u=rand(3,length(x));
 uL=u;
 
-fun1=@(x) (x-0.5).^2+dBC-0.25;
-fun2=@(x) x+dBC;
-fun3=@(x) x.^4+dBC;
+fun1=@(x) sin((pi/2).*x); %(x-0.5).^2+dBC-0.25;
+fun2=@(x) x.^2-2.*x; %x+dBC;
+fun3=@(x) cos((pi/2).*(x-1)); %x.^4+dBC;
 
 u=[fun1(x);fun2(x);fun3(x)];
 uL=u;
@@ -90,7 +91,7 @@ while time<tend
     
     % Advection and Reaction first
     
-    %u=advection(a,k,dBC,nBC,h,m,u,3);  % BC prescribed in "advection.m"
+    u=advection(a,k,dBC,nBC,h,m,u,3);  % BC prescribed in "advection.m"
     [u,num]=Multi_Newton(k,m,u,tol,iter,K1,K2);
     
     %__________________________________________________________
@@ -99,8 +100,8 @@ while time<tend
     
     for j=1:3
     F=zeros(m+1,1);
-    F(1)=dBC;  % Dirichlet BC
-    F(m+1)=nBC; % Neumann BC
+    F(1)=dBC(j,1);  % Dirichlet BC
+    F(m+1)=nBC(j,1); % Neumann BC
     for l=2:m
         F(l)=k*f(x(l),t(i))+u(j,l);   
     end
@@ -132,6 +133,7 @@ while time<tend
     %plot(x,u(1,:),'r',x,u(2,:),'b',x,u(3,:),'k');
     pause(0.01)
 end
+
 plot(x(1:10:end),u(1,1:10:end),'rs',x(1:10:end),u(2,1:10:end),'bo',x(1:10:end),u(3,1:10:end),'k*',x(1:10:end),uL(1,1:10:end),'rp',x(1:10:end),uL(2,1:10:end),'bd',x(1:10:end),uL(3,1:10:end),'kx',...
      x,u(1,:),'r',x,u(2,:),'b',x,u(3,:),'k',x,uL(1,:),'r--',x,uL(2,:),'b--',x,uL(3,:),'k--')
 xlabel('Spatial Position')
