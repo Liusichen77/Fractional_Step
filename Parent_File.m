@@ -11,12 +11,12 @@
 % advection part of this solver, and Two_Point_BVP_Centered_Difference.m
 % for the diffusion.
 
-a=0.00475;  % advection coefficient
-b=1e-2;    % diffusion coefficient
-K1=0.1;  % reaction coefficientn
-K2=0.001;   % reaction coefficient
-dBC=2;  % Dirichlet BC at x=0
-nBC=-1;  % Nuemann BC at x=1 (or xend, if different than 1)
+a=0.0475;  % advection coefficient
+b=0.001;    % diffusion coefficient
+K1=0.01;  % reaction coefficientn
+K2=0;   % reaction coefficient
+dBC=0;  % Dirichlet BC at x=0
+nBC=0;  % Nuemann BC at x=1 (or xend, if different than 1)
 
 tol=1e-8; % tolerance for exiting Multi_Newton loop
 iter=20; % number of iterations for Multi_Newton
@@ -27,7 +27,7 @@ h=xend/m;   % step size
 x=(0:h:xend);   % x grid
 
 n=1000;
-tend=1;
+tend=5;
 k=tend/n;
 t=(0:k:tend);
 
@@ -55,17 +55,18 @@ C(m+1,m)=-1/h; C(m+1,m+1)=1/h;  % Neumann BC at x=1 (we will set F(m+1)=0)
 
 % Initial Profiles 
 
-u1=ones(1,length(x));
-u1(round(0.1*(length(x)/xend)+1):round(0.3*(length(x)/xend)))=1;
+u1=zeros(1,length(x));
+u1(round(0.5*(length(x)/xend)+1):round(0.7*(length(x)/xend)))=1;
 
-u2=ones(1,length(x));
-u2(round(0.1*(length(x)/xend)+1):round(0.4*(length(x)/xend)))=1;
+u2=zeros(1,length(x));
+u2(round(0.3*(length(x)/xend)+1):round(0.5*(length(x)/xend)))=1;
 
-u3=ones(1,length(x));
-u3(round(0.1*(length(x)/xend)+1):round(0.5*(length(x)/xend)))=1;
+u3=zeros(1,length(x));
+u3(round(0.1*(length(x)/xend)+1):round(0.5*(length(x)/xend)))=0;
 
 u=[u1; u2; u3];
-
+uL=u;
+%{
 u=rand(3,length(x));
 uL=u;
 
@@ -75,24 +76,21 @@ fun3=@(x) x.^4+dBC;
 
 u=[fun1(x);fun2(x);fun3(x)];
 uL=u;
+%}
 
-figure
 
-f=@(x,t) 0;% sin(8*pi*x);
+f=@(x,t) 0;
 
 time=t(1);
-i=0;    % keep track of number of iterations in while loop
 
-for i=1:n
-%while time<tend
-    
-    i=i+1;
+%for i=1:n
+while time<tend
     
     %_________________________________________________________
     
     % Advection and Reaction first
     
-    u=advection(a,k,dBC,nBC,h,m,u,3);  % BC prescribed in "advection.m"
+    %u=advection(a,k,dBC,nBC,h,m,u,3);  % BC prescribed in "advection.m"
     [u,num]=Multi_Newton(k,m,u,tol,iter,K1,K2);
     
     %__________________________________________________________
@@ -113,26 +111,29 @@ for i=1:n
     
     % Update time step based on number of iterations it takes for Newton to
     % converge within given tolerance; advance in time accordingly
-    %%{
+ 
     if num<4
         k=k*2;
     else if num>8
-            k=k/2;
+         k=k/2;
         end
     end
-    %}
-    time=time+k;
+    
+    if time+k>tend
+        time=tend;
+    else time=time+k;
+    end
+    
     K(i)=k;     % Keep track of changes to time step
-
+ 
     %___________________________________________________________
     
     plot(x,u(1,:),'r',x,u(2,:),'b',x,u(3,:),'k',x,uL(1,:),'r--',x,uL(2,:),'b--',x,uL(3,:),'k--')
     %plot(x,u(1,:),'r',x,u(2,:),'b',x,u(3,:),'k');
     pause(0.01)
 end
-K
-
-plot(x,u(1,:),'r',x,u(2,:),'b',x,u(3,:),'k',x,uL(1,:),'r--',x,uL(2,:),'b--',x,uL(3,:),'k--')
+plot(x(1:10:end),u(1,1:10:end),'rs',x(1:10:end),u(2,1:10:end),'bo',x(1:10:end),u(3,1:10:end),'k*',x(1:10:end),uL(1,1:10:end),'rp',x(1:10:end),uL(2,1:10:end),'bd',x(1:10:end),uL(3,1:10:end),'kx',...
+     x,u(1,:),'r',x,u(2,:),'b',x,u(3,:),'k',x,uL(1,:),'r--',x,uL(2,:),'b--',x,uL(3,:),'k--')
 xlabel('Spatial Position')
 ylabel('Concentration')
 lgn=legend('A solution','B Solution','C Solution','A Initial','B Initial','C Initial');
